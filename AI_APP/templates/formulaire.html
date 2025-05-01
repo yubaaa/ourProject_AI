@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formulaire de Commentaire Futuriste</title>
+
+  <!-- TailwindCSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <!-- CSRF Token -->
+  <meta name="csrf-token" content="{{ csrf_token }}">
+
+  <!-- Heroicons -->
+  <script src="https://unpkg.com/heroicons@1.0.6/dist/heroicons.min.js"></script>
+
+  <!-- Styles personnalisés -->
+  <style>
+    /* Glow neon */
+    .neon-border {
+      border: 2px solid #2631b0;
+      box-shadow: 0 0 55px #0d4bc9, 0 0 75px #71aae7, 0 0 95px #2d27df;
+    }
+
+    /* Animation apparition douce */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeInUp {
+      animation: fadeInUp 0.8s ease-out forwards;
+    }
+
+    /* Arrière-plan effet verre (glassmorphism) */
+    .glass {
+      backdrop-filter: blur(12px);
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 20px;
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-black via-gray-900 to-black min-h-screen flex items-center justify-center p-6">
+
+  <div class="max-w-2xl w-full glass neon-border p-10 animate-fadeInUp">
+
+    <h2 class="text-center text-4xl font-bold text-cyan-300 mb-8 tracking-wide text-white">💬 Laissez votre Commentaire</h2>
+
+    <form id="comment-form" class="space-y-6">
+      
+      <!-- Champ de Commentaire -->
+      <div>
+        <label for="comment" class="block text-sm font-semibold text-cyan-100 mb-2 text-white">Votre message</label>
+        <textarea id="comment" name="comment" rows="5" 
+          class="w-full p-4 rounded-xl bg-gray-800 bg-opacity-70 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition" 
+          placeholder="Écrivez quelque chose d'incroyable..." required>
+        </textarea>
+      </div>
+
+      <!-- Bouton Soumettre -->
+      <div class="text-center bg-cyan-400 hover:bg-cyan-500">
+        <button type="submit"
+          class="flex items-center text-white justify-center gap-3  w-full py-3 px-6 rounded-xl bg-cyan-400 hover:bg-cyan-500  font-bold uppercase tracking-wide shadow-lg transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-cyan-300">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 10h.01M12 10h.01M16 10h.01M21 16V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2z" />
+          </svg>
+          Envoyer
+        </button>
+      </div>
+
+    </form>
+
+    <!-- Résultat (initialement caché) -->
+    <div id="result-container" class="hidden mt-10 ">
+      <div class="glass p-8 rounded-xl shadow-xl text-white space-y-4 ">
+
+        <h3 class="text-center text-2xl font-bold text-cyan-300 mb-4">✨ Résultat</h3>
+
+        <p id="comment-display" class="text-gray-300"></p>
+
+        <div class="space-y-2">
+          <p><span class="font-semibold text-green-400">Sentiment :</span> <span id="sentiment-value"></span> (<span id="sentiment-confidence"></span>)</p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</body>
+
+<!-- Script d'envoi AJAX -->
+<script>
+document.getElementById("comment-form").addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const comment = document.getElementById("comment").value.trim();
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    if (!comment) {
+        alert("Veuillez entrer un commentaire !");
+        return;
+    }
+
+    try {
+        const response = await fetch("/predict/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            },
+            body: JSON.stringify({ comment: comment })
+        });
+
+        const data = await response.json();
+        console.log("✅ Réponse du serveur :", data);
+
+        // Mettre à jour l'affichage
+        document.getElementById("result-container").classList.remove("hidden");
+        document.getElementById("comment-display").innerText = comment;
+        document.getElementById("sentiment-value").innerText = data.sentiment.value;
+        document.getElementById("sentiment-confidence").innerText = data.sentiment.confidence;
+
+    } catch (error) {
+        console.error("❌ Erreur lors de l'envoi :", error);
+        alert("Erreur lors de l'envoi du commentaire. Veuillez réessayer.");
+    }
+});
+</script>
+</html>
